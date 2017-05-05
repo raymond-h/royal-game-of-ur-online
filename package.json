@@ -5,6 +5,7 @@
   "dependencies": {
     "deepstream.io": "^2.2.2"
   },
+  "cacheDirectories": ["node_modules", "backend/node_modules", "service/node_modules"],
   "engines": {
   	"node": ">=7.6.0 <8.0.0"
   }
