@@ -4,5 +4,8 @@
   },
   "dependencies": {
     "deepstream.io": "^2.2.2"
+  },
+  "engines": {
+  	"node": ">=7.6.0 <8.0.0"
   }
 }
