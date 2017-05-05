@@ -1,21 +1,16 @@
 const path = require('path');
 
 const Koa = require('koa');
-const Router = require('koa-router');
+const mount = require('koa-mount');
 const static = require('koa-static');
 const proxy = require('koa-proxy');
 
 const app = new Koa();
 
-const router = new Router();
+app.use(mount('/static', static(path.join(__dirname, '../static'))));
 
-router.use('/static', static(path.join(__dirname, '../static')));
-
-// router.get('/deepstream', proxy({
-// 	url: 'http://localhost:6020/deepstream'
-// }));
-
-app.use(router.routes());
-app.use(router.allowedMethods());
+app.use(mount(
+	'/deepstream', proxy({ url: 'http://localhost:6020/deepstream' })
+));
 
 app.listen(process.env.PORT);
