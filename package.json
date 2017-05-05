@@ -1,6 +1,6 @@
 {
   "scripts": {
-    "install": "cd backend/ && npm install"
+    "install": "cd backend/ && npm install && cd ../service && npm install"
   },
   "dependencies": {
     "deepstream.io": "^2.2.2"
