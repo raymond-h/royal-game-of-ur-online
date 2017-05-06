@@ -1,16 +1,12 @@
 {
   "scripts": {
-    "install": "cd service && npm install",
     "http-server": "http-server -p $PORT ./static/"
   },
-  "cacheDirectories": [
-    "node_modules",
-    "service/node_modules"
-  ],
   "engines": {
     "node": ">=7.6.0 <8.0.0"
   },
   "dependencies": {
+    "deepstream.io-client-js": "^2.1.5",
     "http-server": "^0.10.0"
   }
 }
