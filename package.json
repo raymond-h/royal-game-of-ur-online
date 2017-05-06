@@ -1,9 +1,16 @@
 {
   "scripts": {
-    "install": "cd backend/ && npm install && cd ../service && npm install"
+    "install": "cd service && npm install",
+    "http-server": "http-server -p $PORT ./static/"
   },
-  "cacheDirectories": ["node_modules", "backend/node_modules", "service/node_modules"],
+  "cacheDirectories": [
+    "node_modules",
+    "service/node_modules"
+  ],
   "engines": {
-  	"node": ">=7.6.0 <8.0.0"
+    "node": ">=7.6.0 <8.0.0"
+  },
+  "dependencies": {
+    "http-server": "^0.10.0"
   }
 }
