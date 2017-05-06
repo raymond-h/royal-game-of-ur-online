@@ -1,11 +1,14 @@
 {
   "scripts": {
-    "http-server": "http-server -p $PORT ./static/"
+    "http-server": "http-server -p $PORT ./static/",
+    "heroku-postbuild": "npm run build",
+    "build": "browserify lib/web/index.js -o static/index.js"
   },
   "engines": {
     "node": ">=7.6.0 <8.0.0"
   },
   "dependencies": {
+    "browserify": "^14.3.0",
     "deepstream.io-client-js": "^2.1.5",
     "http-server": "^0.10.0"
   }
