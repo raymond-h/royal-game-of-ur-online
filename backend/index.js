@@ -11,7 +11,7 @@ const app = new Koa();
 app.use(logger());
 
 app.use(mount('/env', ctx => {
-	ctx.body = process.env;
+	ctx.body = JSON.stringify(process.env);
 }));
 
 const proxy = httpProxy.createProxyServer({
