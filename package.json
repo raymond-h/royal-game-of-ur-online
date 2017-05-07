@@ -2,14 +2,22 @@
   "scripts": {
     "http-server": "http-server -p $PORT ./static/",
     "heroku-postbuild": "npm run build",
-    "build": "browserify lib/web/index.js -o static/index.js"
+    "build": "run-p build:*",
+    "build:ts": "tsc",
+    "build:web": "browserify -p [ tsify ] src/web/index.ts -o static/index.js"
   },
   "engines": {
     "node": ">=7.6.0 <8.0.0"
   },
   "dependencies": {
-    "browserify": "^14.3.0",
     "deepstream.io-client-js": "^2.1.5",
     "http-server": "^0.10.0"
+  },
+  "devDependencies": {
+    "@types/node": "^7.0.18",
+    "browserify": "^14.3.0",
+    "npm-run-all": "^4.0.2",
+    "tsify": "^3.0.1",
+    "typescript": "^2.3.2"
   }
 }

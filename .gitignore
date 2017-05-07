@@ -1,4 +1,5 @@
-node_modules
-deepstream
+node_modules/
+deepstream/
+lib/
 
 static/index.js

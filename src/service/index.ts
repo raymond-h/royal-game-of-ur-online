@@ -1,4 +1,4 @@
-const deepstream = require('deepstream.io-client-js');
+import deepstream = require('deepstream.io-client-js');
 
 const client = deepstream('thingie-deepstream.raymond-h.me').login();
 
