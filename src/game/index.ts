@@ -46,10 +46,6 @@ function passToNextPlayer(state: State): State {
 
 export const actionHandlers = {
     setDiceRolls(state: State, { roll }: { type: 'setDiceRolls', roll: number }) {
-        if(roll == 0) {
-            return passToNextPlayer(state);
-        }
-
         return { ...state, lastRoll: roll };
     },
 
@@ -115,6 +111,10 @@ export const actionHandlers = {
 
         // only pass when not hitting a reroll spot (3, 7, 13)
         return isRerollSpot(newPosition) ? newState : passToNextPlayer(newState);
+    },
+
+    pass(state: State, action: { type: 'pass' }) {
+        return passToNextPlayer(state);
     }
 };
 

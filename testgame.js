@@ -65,6 +65,9 @@ function toAction(argv, state) {
 	else if(argv[0] === 'move') {
 		return { type: 'movePiece', index: positionToIndex(state, state.currentPlayer, Number(argv[1])) };
 	}
+	else if(argv[0] === 'pass') {
+		return { type: 'pass' };
+	}
 }
 
 const fs = require('fs');
