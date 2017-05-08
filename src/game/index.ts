@@ -1,3 +1,4 @@
+import assert = require('assert');
 import R = require('ramda');
 
 interface State {
@@ -22,7 +23,11 @@ export const initialState: State = {
 };
 
 function isDangerZone(position: number): boolean {
-    return 4 <= position && position <= 11 && position != 7;
+    return 4 <= position && position <= 11;
+}
+
+function isSafeSpot(position: number): boolean {
+    return position == 7;
 }
 
 function isRerollSpot(position: number): boolean {
@@ -73,6 +78,9 @@ export const actionHandlers = {
         const piece = state.players[player].fieldedPieces[index];
         const newPosition = piece.position + (state.lastRoll as number);
 
+        assert.ok(!hasPieceAt(state, player, newPosition),
+            'Cannot move piece to same spot as another of own pieces');
+
         if(newPosition == 14) {
             // piece reached the end, increase won pieces for player
             newState.players[player].wonPieces += 1;
@@ -80,11 +88,14 @@ export const actionHandlers = {
         }
         else {
             // if there is an opponent piece on same position,
-            // and it's a danger zone (in middle lane, != 7),
+            // and it's a danger zone (in middle lane),
             // remove opponent piece
             const opponentPlayer = (player + 1) % (state.players.length);
             
             if(isDangerZone(newPosition) && hasPieceAt(state, opponentPlayer, newPosition)) {
+                assert.ok(!isSafeSpot(newPosition),
+                    'Cannot move piece to the safe spot in danger zone if enemy occupies it');
+
                 const opponentFieldedPieces = state.players[opponentPlayer].fieldedPieces;
 
                 const enemyPieceIndex = R.findIndex(
