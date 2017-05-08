@@ -46,10 +46,15 @@ function passToNextPlayer(state: State): State {
 
 export const actionHandlers = {
     setDiceRolls(state: State, { roll }: { type: 'setDiceRolls', roll: number }) {
+        assert.ok(state.lastRoll == null, 'Cannot roll more than once');
+
         return { ...state, lastRoll: roll };
     },
 
     addPiece(state: State, action: { type: 'addPiece' }) {
+        assert.ok(state.lastRoll != null, 'Must roll first');
+        assert.ok(state.lastRoll != 0, 'Must roll a number greater than 1 to add a piece');
+
         const player = state.currentPlayer;
 
         assert.ok(state.players[player].outOfPlayPieces > 0,
@@ -73,12 +78,17 @@ export const actionHandlers = {
     },
 
     movePiece(state: State, { index }: { type: 'movePiece', index: number }) {
+        assert.ok(state.lastRoll != null, 'Must roll first');
+        assert.ok(state.lastRoll != 0, 'Must roll a number greater than 1 to move');
+
         const player = state.currentPlayer;
 
         const newState = R.clone(state);
 
         const piece = state.players[player].fieldedPieces[index];
         const newPosition = piece.position + (state.lastRoll as number);
+
+        assert.ok(newPosition <= 14, 'Cannot move piece outside of board');
 
         assert.ok(!hasPieceAt(state, player, newPosition),
             'Cannot move piece to same spot as another of own pieces');
@@ -120,7 +130,7 @@ export const actionHandlers = {
     },
 
     pass(state: State, action: { type: 'pass' }) {
-        return passToNextPlayer(state);
+        return passToNextPlayer({ ...state, lastRoll: null });
     }
 };
 
