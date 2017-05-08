@@ -52,9 +52,15 @@ export const actionHandlers = {
     addPiece(state: State, action: { type: 'addPiece' }) {
         const player = state.currentPlayer;
 
+        assert.ok(state.players[player].outOfPlayPieces > 0,
+            'Player is out of pieces to add');
+
         const newState = R.clone(state);
 
         const newPosition = (state.lastRoll as number)-1;
+
+        assert.ok(!hasPieceAt(state, player, newPosition),
+            'Cannot add piece to occupied spot');
 
         newState.players[player].outOfPlayPieces -= 1;
         newState.players[player].fieldedPieces.push({
