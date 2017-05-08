@@ -12,7 +12,7 @@ interface PlayerState {
     fieldedPieces: { position: number }[];
 }
 
-const initialState: State = {
+export const initialState: State = {
     players: [
         { wonPieces: 0, outOfPlayPieces: 7, fieldedPieces: [] },
         { wonPieces: 0, outOfPlayPieces: 7, fieldedPieces: [] }
@@ -29,19 +29,17 @@ function isRerollSpot(position: number): boolean {
     return position == 3 || position == 7 || position == 13;
 }
 
-function hasEnemyPiece(state: State, position: number): boolean {
-    const opponentPlayer = (state.currentPlayer + 1) % (state.players.length);
+function hasPieceAt(state: State, player: number, position: number): boolean {
+    const pieces = state.players[player].fieldedPieces;
 
-    const opponentFieldedPieces = state.players[opponentPlayer].fieldedPieces;
-
-    return R.any(R.propEq('position', position), opponentFieldedPieces);
+    return R.any(R.propEq('position', position), pieces);
 }
 
 function passToNextPlayer(state: State): State {
     return { ...state, currentPlayer: (state.currentPlayer + 1) % (state.players.length) };
 }
 
-const actionHandlers = {
+export const actionHandlers = {
     setDiceRolls(state: State, { roll }: { type: 'setDiceRolls', roll: number }) {
         if(roll == 0) {
             return passToNextPlayer(state);
@@ -84,9 +82,9 @@ const actionHandlers = {
             // if there is an opponent piece on same position,
             // and it's a danger zone (in middle lane, != 7),
             // remove opponent piece
-            if(isDangerZone(newPosition) && hasEnemyPiece(state, newPosition)) {
-                const opponentPlayer = (player + 1) % (state.players.length);
-
+            const opponentPlayer = (player + 1) % (state.players.length);
+            
+            if(isDangerZone(newPosition) && hasPieceAt(state, opponentPlayer, newPosition)) {
                 const opponentFieldedPieces = state.players[opponentPlayer].fieldedPieces;
 
                 const enemyPieceIndex = R.findIndex(
@@ -95,13 +93,20 @@ const actionHandlers = {
                 );
 
                 newState.players[opponentPlayer].fieldedPieces.splice(enemyPieceIndex, 1);
+                newState.players[opponentPlayer].outOfPlayPieces += 1;
             }
 
             // move current piece to newPosition
             newState.players[player].fieldedPieces[index].position = newPosition;
         }
 
+        newState.lastRoll = null;
+
         // only pass when not hitting a reroll spot (3, 7, 13)
         return isRerollSpot(newPosition) ? newState : passToNextPlayer(newState);
     }
 };
+
+export function reducer(state: State, action) {
+    return actionHandlers[action.type](state, action);
+}

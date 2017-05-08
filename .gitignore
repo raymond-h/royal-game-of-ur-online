@@ -3,3 +3,4 @@ deepstream/
 lib/
 
 static/index.js
+state.json
