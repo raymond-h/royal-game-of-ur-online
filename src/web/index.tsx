@@ -6,7 +6,7 @@ import whenDomReady = require('when-dom-ready');
 
 import { Game } from './game';
 
-const client = deepstream('thingie-deepstream.raymond-h.me').login();
+const client = deepstream(process.env.DEEPSTREAM_URL).login();
 
 function fromDsRecord(recordName: string, triggerImmediately: boolean): Rx.Observable<any> {
 	return Rx.Observable.fromEventPattern(

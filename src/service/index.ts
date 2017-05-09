@@ -1,7 +1,14 @@
 import deepstream = require('deepstream.io-client-js');
 import game = require('../game');
 
-const client = deepstream('thingie-deepstream.raymond-h.me').login();
+let clientData;
+
+const client = deepstream(process.env.DEEPSTREAM_URL).login({
+	internalService: true,
+	internalToken: process.env.INTERNAL_SERVICE_TOKEN
+}, (success, data) => {
+	clientData = data;
+});
 
 client.rpc.provide('newGame', (data, res) => {
 	const gameId = client.getUid();

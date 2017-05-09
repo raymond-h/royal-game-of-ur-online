@@ -2,5 +2,6 @@ node_modules/
 deepstream/
 lib/
 
+env
 static/index.js
 state.json
