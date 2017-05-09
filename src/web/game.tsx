@@ -1,4 +1,5 @@
 import React = require('react');
+import R = require('ramda');
 
 function positionTo2dPosition(position: number, player: number) {
 	const y = (player === 0) ? 1 : -1;
@@ -20,10 +21,12 @@ function screenCoords(position: number, player: number) {
 	return { x: 74*x + 40, y: 74*(y+1) + 51 };
 }
 
-export function Game({ state, onAction }) {
-	if(state == null) { return <p>No game here, create a new one or something!</p>; }
+type Piece = { position: number };
 
-	const pieceMapper = player => (piece, index) => {
+function GameBoard(props: { piecesPerPlayer: Piece[][], onPieceClick: (player: number, piece: number) => void }) {
+	const { piecesPerPlayer, onPieceClick } = props;
+
+	const pieceMapper = player => (piece: Piece, index) => {
 		const coords = screenCoords(piece.position, player);
 
 		if(coords == null) return null;
@@ -33,31 +36,56 @@ export function Game({ state, onAction }) {
 		return <div
 			className={['piece', `player-${player+1}`].join(' ')}
 			style={{ top: y, left: x }}
-			onClick={() => onAction({ type: 'movePiece', index })}>
-			{index}
+			onClick={() => onPieceClick(player, index)}>
 		</div>;
 	};
 
-	const player1 = state.players[0];
-	const player2 = state.players[1];
+	return <div className='board'>
+		{piecesPerPlayer.map((pieces, player) => {
+			return pieces.map(pieceMapper(player));
+		})}
+	</div>;
+}
 
-	const player1Pieces = player1.fieldedPieces.map(pieceMapper(0));
-	const player2Pieces = player2.fieldedPieces.map(pieceMapper(1));
+function PlayerInfo({ playerIndex, playerState, userInfo }) {
+	return <div>
+		<p>Player #{ playerIndex+1 } ({ userInfo.name })</p>
+		<ul>
+			<li>{ playerState.wonPieces } won pieces</li>
+			<li>{ playerState.outOfPlayPieces } addable pieces</li>
+		</ul>
+	</div>;
+}
+
+export function Game({ ownPlayer, spectating = false, game, userInfos, onAction }) {
+	if(game == null) { return <p>No game here, create a new one or something!</p>; }
 
 	const onRoll = () =>
 		onAction({ type: 'setDiceRolls', roll: Math.floor(Math.random() * 5) });
 
+	const onAdd = () => onAction({ type: 'addPiece' });
+	const onPass = () => onAction({ type: 'pass' });
+
+	const piecesPerPlayer = game.players.map(player => player.fieldedPieces);
+
+	const isOurTurn = game.currentPlayer === ownPlayer;
+
 	return <div>
-		<div className='board'>
-			{player1Pieces}
-			{player2Pieces}
-		</div>
-		<h1>Player #{state.currentPlayer+1}'s turn!!</h1>
-		<p>PLAYER #1 (won pieces: {player1.wonPieces}) (remaining pieces: {player1.outOfPlayPieces})</p>
-		<p>PLAYER #2 (won pieces: {player2.wonPieces}) (remaining pieces: {player2.outOfPlayPieces})</p>
-		<button onClick={onRoll}>Roll</button>
-		<button onClick={() => onAction({ type: 'addPiece' })}>Add piece</button>
-		<button onClick={() => onAction({ type: 'pass' })}>Pass</button>
-		<p>Last dice roll: {state.lastRoll}</p>
+		<p>{ userInfos[0].name } vs { userInfos[1].name }!!</p>
+		<p>{ userInfos[game.currentPlayer].name }'s turn!!</p>
+
+		<PlayerInfo playerIndex={1} playerState={game.players[1]} userInfo={userInfos[1]} />
+
+		<GameBoard piecesPerPlayer={piecesPerPlayer}
+			onPieceClick={(player, index) => (player == ownPlayer) && onAction({ type: 'movePiece', index })} />
+
+		<PlayerInfo playerIndex={0} playerState={game.players[0]} userInfo={userInfos[0]} />
+
+		{spectating ? null : [
+			<button onClick={onRoll} disabled={!isOurTurn}>Roll</button>,
+			<button onClick={onAdd} disabled={!isOurTurn}>Add piece</button>,
+			<button onClick={onPass} disabled={!isOurTurn}>Pass</button>
+		]}
+		<p>Last dice roll: {game.lastRoll}</p>
 	</div>;
 }

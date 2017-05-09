@@ -83,10 +83,13 @@ app.post('/deepstream-auth', (req, res) => {
         useExpressMiddleware(connectionData.headers, authMiddlewares, authReq => {
             const { user } = authReq;
 
+            console.log(user);
+
             if(user) {
+                const username = `user_${user.id}`;
                 res.status(200).json({
-                    username: `user_${user.user_id}`,
-                    clientData: { type: 'user', auth0: user._json },
+                    username,
+                    clientData: { type: 'user', username, auth0: user._json },
                     serverData: { type: 'user', auth0: user._json }
                 });
             }
