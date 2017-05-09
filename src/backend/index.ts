@@ -50,6 +50,11 @@ app.use(serveStatic('./static'));
 
 app.get('/login', passport.authenticate('auth0', {}));
 
+app.get('/logout', (req, res) => {
+    req.logout();
+    res.redirect('/');
+});
+
 app.get('/callback',
     passport.authenticate('auth0', { failureRedirect: '/login' }),
     (req, res) => {
@@ -66,8 +71,8 @@ app.post('/deepstream-auth', (req, res) => {
 
             res.status(200).json({
                 username: serviceId,
-                clientData: { __internalService: true, serviceId },
-                serverData: { __internalService: true, serviceId }
+                clientData: { type: 'internal-service', serviceId },
+                serverData: { type: 'internal-service', serviceId }
             });
         }
         else {
@@ -80,13 +85,17 @@ app.post('/deepstream-auth', (req, res) => {
 
             if(user) {
                 res.status(200).json({
-                    username: user.displayName,
-                    clientData: user._json,
-                    serverData: user._json
+                    username: `user_${user.user_id}`,
+                    clientData: { type: 'user', auth0: user._json },
+                    serverData: { type: 'user', auth0: user._json }
                 });
             }
             else {
-                res.sendStatus(401);
+                res.status(200).json({
+                    username: `guest_${Math.random()}`,
+                    clientData: { type: 'guest' },
+                    serverData: { type: 'guest' }
+                });
             }
         });
     }
