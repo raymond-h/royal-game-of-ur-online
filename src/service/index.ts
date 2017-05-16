@@ -4,7 +4,7 @@ import game = require('../game');
 
 let clientData;
 
-const client = deepstream(process.env.DEEPSTREAM_URL).login({
+const client = deepstream(process.env.DEEPSTREAM_BACKEND_URL).login({
 	internalService: true,
 	internalToken: process.env.INTERNAL_SERVICE_TOKEN
 }, (success, data) => {
