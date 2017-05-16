@@ -1,5 +1,6 @@
 import express = require('express');
 import session = require('express-session');
+import proxy = require('http-proxy-middleware');
 import serveStatic = require('serve-static');
 import bodyParser = require('body-parser');
 import morgan = require('morgan');
@@ -33,6 +34,8 @@ passport.deserializeUser(function(user, done) {
 const app = express();
 
 app.use(morgan('dev'));
+
+app.use('/deepstream', proxy(process.env.DEEPSTREAM_BACKEND_URL, { ws: true }));
 
 const authMiddlewares = [
     session({ secret: process.env.SESSION_SECRET }),

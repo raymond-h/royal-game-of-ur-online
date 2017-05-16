@@ -227,7 +227,7 @@ class App extends React.Component<{ client: deepstreamIO.Client, clientData: any
 
 whenDomReady()
 .then(() => {
-	const client = deepstream(process.env.DEEPSTREAM_FRONTEND_URL);
+	const client = deepstream(location.host);
 
 	const app = (client, clientData) => {
 		return <App client={client} clientData={clientData} />;
