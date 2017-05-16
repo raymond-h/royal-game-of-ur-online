@@ -60,10 +60,9 @@ function PlayerInfo({ playerIndex, playerState, userInfo }) {
 export function Game({ ownPlayer, spectating = false, game, userInfos, onAction }) {
 	if(game == null) { return <p>No game here, create a new one or something!</p>; }
 
-	const onRoll = () =>
-		onAction({ type: 'setDiceRolls', roll: Math.floor(Math.random() * 5) });
-
+	const onRoll = () => onAction({ type: 'roll' });
 	const onAdd = () => onAction({ type: 'addPiece' });
+	const onMove = (player, index) => (player == ownPlayer) && onAction({ type: 'movePiece', index });
 	const onPass = () => onAction({ type: 'pass' });
 
 	const piecesPerPlayer = game.players.map(player => player.fieldedPieces);
@@ -76,8 +75,7 @@ export function Game({ ownPlayer, spectating = false, game, userInfos, onAction 
 
 		<PlayerInfo playerIndex={1} playerState={game.players[1]} userInfo={userInfos[1]} />
 
-		<GameBoard piecesPerPlayer={piecesPerPlayer}
-			onPieceClick={(player, index) => (player == ownPlayer) && onAction({ type: 'movePiece', index })} />
+		<GameBoard piecesPerPlayer={piecesPerPlayer} onPieceClick={onMove} />
 
 		<PlayerInfo playerIndex={0} playerState={game.players[0]} userInfo={userInfos[0]} />
 

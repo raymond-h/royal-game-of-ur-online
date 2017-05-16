@@ -38,6 +38,30 @@ client.rpc.provide('acceptGame', ({ userId, gameId }, res) => {
 	res.send({ gameId });
 });
 
+function diceRoll() {
+	const coinFlip = () => (Math.random() < 0.5) ? 1 : 0;
+
+	return coinFlip() + coinFlip() + coinFlip() + coinFlip();
+}
+
+const actionMappers = {
+	roll(data) {
+		return { type: 'setDiceRolls', roll: diceRoll() };
+	},
+
+	addPiece(data) {
+		return data;
+	},
+
+	movePiece(data) {
+		return data;
+	},
+
+	pass(data) {
+		return data;
+	}
+};
+
 client.rpc.provide('performAction', ({ userId, gameId, action }, res) => {
 	const stateRecord = client.record.getRecord(`game/${gameId}`);
 
@@ -51,7 +75,9 @@ client.rpc.provide('performAction', ({ userId, gameId, action }, res) => {
 				throw new Error(`It is not that player's turn`);
 			}
 
-			const newGameState = game.reducer(state.gameState, action);
+			const gameAction = actionMappers[action.type](action);
+
+			const newGameState = game.reducer(state.gameState, gameAction);
 
 			stateRecord.set('gameState', newGameState);
 			res.send('ok');
