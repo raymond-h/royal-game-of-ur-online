@@ -35,7 +35,7 @@ const app = express();
 
 app.use(morgan('dev'));
 
-app.use('/deepstream', proxy(process.env.DEEPSTREAM_BACKEND_URL, { ws: true }));
+app.use('/deepstream', proxy({ target: process.env.DEEPSTREAM_BACKEND_URL, ws: true }));
 
 const authMiddlewares = [
     session({ secret: process.env.SESSION_SECRET }),
