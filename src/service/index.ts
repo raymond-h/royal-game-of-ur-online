@@ -92,8 +92,11 @@ client.rpc.provide('performAction', ({ userId, gameId, action }, res) => {
 	});
 });
 
+const userRegex = /^user\/user_(.+)$/;
+
 client.presence.subscribe((username, isLoggedIn) => {
 	if(!isLoggedIn) return;
+	if(!userRegex.test(username)) return;
 
 	const userInfoRecord = client.record.getRecord(`user/${username}`);
 
