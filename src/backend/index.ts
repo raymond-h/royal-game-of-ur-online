@@ -35,7 +35,11 @@ const app = express();
 
 app.use(morgan('dev'));
 
-const wsProxy = proxy({ target: process.env.DEEPSTREAM_PROXY_URL, ws: true });
+const wsProxy = proxy({
+    target: process.env.DEEPSTREAM_PROXY_URL,
+    changeOrigin: true,
+    ws: true
+});
 
 app.use('/deepstream', wsProxy);
 
