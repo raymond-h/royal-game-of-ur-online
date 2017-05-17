@@ -19,6 +19,10 @@
     background-color: blue;
 }
 
+.current-player {
+	font-size: 28px;
+}
+
 .player-1 {
 	color: red;
 }

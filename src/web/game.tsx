@@ -76,7 +76,6 @@ export function Game({ ownPlayer, spectating = false, game, userInfos, onAction 
 
 	return <div>
 		<p>{ userInfos[0].name } vs { userInfos[1].name }!!</p>
-		<p className={curPlayerTextClasses}>{ userInfos[game.currentPlayer].name }'s turn!!</p>
 
 		<PlayerInfo playerIndex={1} playerState={game.players[1]} userInfo={userInfos[1]} />
 
@@ -84,6 +83,7 @@ export function Game({ ownPlayer, spectating = false, game, userInfos, onAction 
 
 		<PlayerInfo playerIndex={0} playerState={game.players[0]} userInfo={userInfos[0]} />
 
+		<p className={curPlayerTextClasses}>{ userInfos[game.currentPlayer].name }'s turn!!</p>
 		{spectating ? null : [
 			<button onClick={onRoll} disabled={!isOurTurn}>Roll</button>,
 			<button onClick={onAdd} disabled={!isOurTurn}>Add piece</button>,
