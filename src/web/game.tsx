@@ -81,7 +81,7 @@ export function Game({ ownPlayer, spectating = false, game, userInfos, gameOver,
 
 	const piecesPerPlayer = game.players.map(player => player.fieldedPieces);
 
-	const isOurTurn = game.currentPlayer === ownPlayer;
+	const isOurTurn = gameOver || (game.currentPlayer === ownPlayer);
 
 	return <div>
 		<p>{ userInfos[0].name } vs { userInfos[1].name }!!</p>
