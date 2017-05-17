@@ -61,7 +61,7 @@ function StatusText({ gameOver, game, winner, userInfos }) {
 	const statusTextClasses = [
 		'status-text',
 		gameOver ? 'game-over' : 'current-player',
-		gameOver ? `player-${game.currentPlayer+1}` : `player-${winner+1}`
+		gameOver ? `player-${winner+1}` : `player-${game.currentPlayer+1}`
 	].join(' ');
 
 	const statusText = gameOver ?
