@@ -48,7 +48,7 @@ function GameBoard(props: { piecesPerPlayer: Piece[][], onPieceClick: (player: n
 }
 
 function PlayerInfo({ playerIndex, playerState, userInfo }) {
-	return <div>
+	return <div className={`player-info player-${playerIndex+1}`}>
 		<p>Player #{ playerIndex+1 } ({ userInfo.name })</p>
 		<ul>
 			<li>{ playerState.wonPieces } won pieces</li>
@@ -69,9 +69,14 @@ export function Game({ ownPlayer, spectating = false, game, userInfos, onAction 
 
 	const isOurTurn = game.currentPlayer === ownPlayer;
 
+	const curPlayerTextClasses = [
+		'current-player',
+		`player-${game.currentPlayer+1}`
+	].join(' ');
+
 	return <div>
 		<p>{ userInfos[0].name } vs { userInfos[1].name }!!</p>
-		<p>{ userInfos[game.currentPlayer].name }'s turn!!</p>
+		<p className={curPlayerTextClasses}>{ userInfos[game.currentPlayer].name }'s turn!!</p>
 
 		<PlayerInfo playerIndex={1} playerState={game.players[1]} userInfo={userInfos[1]} />
 
