@@ -55,13 +55,13 @@ export function hasWinner(state: State): [boolean, number | null] {
 }
 
 export const actionHandlers = {
-    setDiceRolls(state: State, { roll }: { type: 'setDiceRolls', roll: number }) {
+    setDiceRolls(state: State, { roll }: { type: 'setDiceRolls', roll: number }): State {
         assert.ok(state.lastRoll == null, 'Cannot roll more than once');
 
         return { ...state, lastRoll: roll };
     },
 
-    addPiece(state: State, action: { type: 'addPiece' }) {
+    addPiece(state: State, action: { type: 'addPiece' }): State {
         assert.ok(state.lastRoll != null, 'Must roll first');
         assert.ok(state.lastRoll != 0, 'Must roll a number greater than 1 to add a piece');
 
@@ -87,7 +87,7 @@ export const actionHandlers = {
         return isRerollSpot(newPosition) ? newState : passToNextPlayer(newState);
     },
 
-    movePiece(state: State, { index }: { type: 'movePiece', index: number }) {
+    movePiece(state: State, { index }: { type: 'movePiece', index: number }): State {
         assert.ok(state.lastRoll != null, 'Must roll first');
         assert.ok(state.lastRoll != 0, 'Must roll a number greater than 1 to move');
 
@@ -139,11 +139,11 @@ export const actionHandlers = {
         return isRerollSpot(newPosition) ? newState : passToNextPlayer(newState);
     },
 
-    pass(state: State, action: { type: 'pass' }) {
+    pass(state: State, action: { type: 'pass' }): State {
         return passToNextPlayer({ ...state, lastRoll: null });
     }
 };
 
-export function reducer(state: State, action) {
+export function reducer(state: State, action): State {
     return actionHandlers[action.type](state, action);
 }
