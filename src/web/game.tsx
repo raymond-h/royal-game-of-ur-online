@@ -57,7 +57,21 @@ function PlayerInfo({ playerIndex, playerState, userInfo }) {
 	</div>;
 }
 
-export function Game({ ownPlayer, spectating = false, game, userInfos, onAction }) {
+function StatusText({ gameOver, game, winner, userInfos }) {
+	const statusTextClasses = [
+		'status-text',
+		gameOver ? 'game-over' : 'current-player',
+		gameOver ? `player-${game.currentPlayer+1}` : `player-${winner+1}`
+	].join(' ');
+
+	const statusText = gameOver ?
+		`${ userInfos[winner].name } won!!!!!` :
+		`${ userInfos[game.currentPlayer].name }'s turn!!`;
+
+	return <p className={statusTextClasses}>{statusText}</p>;
+}
+
+export function Game({ ownPlayer, spectating = false, game, userInfos, gameOver, winner, onAction }) {
 	if(game == null) { return <p>No game here, create a new one or something!</p>; }
 
 	const onRoll = () => onAction({ type: 'roll' });
@@ -69,11 +83,6 @@ export function Game({ ownPlayer, spectating = false, game, userInfos, onAction 
 
 	const isOurTurn = game.currentPlayer === ownPlayer;
 
-	const curPlayerTextClasses = [
-		'current-player',
-		`player-${game.currentPlayer+1}`
-	].join(' ');
-
 	return <div>
 		<p>{ userInfos[0].name } vs { userInfos[1].name }!!</p>
 
@@ -83,7 +92,7 @@ export function Game({ ownPlayer, spectating = false, game, userInfos, onAction 
 
 		<PlayerInfo playerIndex={0} playerState={game.players[0]} userInfo={userInfos[0]} />
 
-		<p className={curPlayerTextClasses}>{ userInfos[game.currentPlayer].name }'s turn!!</p>
+		<StatusText {...{ gameOver, game, winner, userInfos }} />
 		{spectating ? null : [
 			<button onClick={onRoll} disabled={!isOurTurn}>Roll</button>,
 			<button onClick={onAdd} disabled={!isOurTurn}>Add piece</button>,

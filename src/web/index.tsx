@@ -50,8 +50,9 @@ class DeepstreamClientWrapper
 }
 
 type GameState =
-	{ state: 'awaitingOpponent', players: [string, null], gameState: any } |
-	{ state: 'playing', players: [string, string], gameState: any };
+	{ state: 'awaitingOpponent', players: [string, null], gameState: any, winner: null } |
+	{ state: 'playing', players: [string, string], gameState: any, winner: null } |
+	{ state: 'game-over', players: [string, string], gameState: any, winner: number };
 
 interface UserInfo {
 	name: string;
@@ -183,6 +184,8 @@ class App extends React.Component<{ client: deepstreamIO.Client, clientData: any
 						ownPlayer={-1}
 						game={this.state.game.gameState}
 						userInfos={this.state.userInfos}
+						gameOver={this.state.game.state === 'game-over'}
+						winner={this.state.game.winner}
 						spectating={true}
 						onAction={() => void 0} /> :
 					null
@@ -217,6 +220,8 @@ class App extends React.Component<{ client: deepstreamIO.Client, clientData: any
 					ownPlayer={ownPlayer}
 					game={this.state.game.gameState}
 					userInfos={this.state.userInfos}
+					gameOver={this.state.game.state === 'game-over'}
+					winner={this.state.game.winner}
 					spectating={!R.contains(this.props.clientData.username, this.state.game.players)}
 					onAction={this.onAction.bind(this)} /> :
 				null

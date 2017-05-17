@@ -19,7 +19,8 @@ client.rpc.provide('newGame', ({ userId }, res) => {
 	stateRecord.set({
 		state: 'awaitingOpponent',
 		players: [userId, null],
-		gameState: game.initialState
+		gameState: game.initialState,
+		winner: null
 	});
 
 	stateRecord.discard();
@@ -69,7 +70,8 @@ client.rpc.provide('performAction', ({ userId, gameId, action }, res) => {
 		try {
 			const state = stateRecord.get();
 
-			assert.strictEqual(state.state, 'playing');
+			assert.strictEqual(state.state, 'playing',
+				'This game is either not ready to be played yet, or already finished');
 
 			if(state.players[state.gameState.currentPlayer] !== userId) {
 				throw new Error(`It is not that player's turn`);
@@ -79,7 +81,13 @@ client.rpc.provide('performAction', ({ userId, gameId, action }, res) => {
 
 			const newGameState = game.reducer(state.gameState, gameAction);
 
+			const [gameOver, winner] = game.hasWinner(newGameState);
+
 			stateRecord.set('gameState', newGameState);
+			stateRecord.set('winner', winner);
+			if(gameOver) {
+				stateRecord.set('state', 'game-over');
+			}
 			res.send('ok');
 		}
 		catch(e) {

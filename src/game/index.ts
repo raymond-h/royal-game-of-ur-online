@@ -44,6 +44,16 @@ function passToNextPlayer(state: State): State {
     return { ...state, currentPlayer: (state.currentPlayer + 1) % (state.players.length) };
 }
 
+export function hasWinner(state: State): [boolean, number | null] {
+    for(let i = 0; i < 2; i++) {
+        if(state.players[i].wonPieces === 7) {
+            return [true, i];
+        }
+    }
+
+    return [false, null];
+}
+
 export const actionHandlers = {
     setDiceRolls(state: State, { roll }: { type: 'setDiceRolls', roll: number }) {
         assert.ok(state.lastRoll == null, 'Cannot roll more than once');
