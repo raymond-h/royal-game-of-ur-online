@@ -45,7 +45,7 @@ function diceRoll() {
 	return coinFlip() + coinFlip() + coinFlip() + coinFlip();
 }
 
-const actionMappers = {
+const userActionMappers = {
 	roll(data) {
 		return { type: 'setDiceRolls', roll: diceRoll() };
 	},
@@ -63,7 +63,7 @@ const actionMappers = {
 	}
 };
 
-client.rpc.provide('performAction', ({ userId, gameId, action }, res) => {
+client.rpc.provide('performAction', ({ userId, gameId, userAction }, res) => {
 	const stateRecord = client.record.getRecord(`game/${gameId}`);
 
 	stateRecord.whenReady(() => {
@@ -76,9 +76,9 @@ client.rpc.provide('performAction', ({ userId, gameId, action }, res) => {
 			assert.notStrictEqual(state.players[state.gameState.currentPlayer], userId,
 				`It is not that player's turn`);
 
-			const gameAction = actionMappers[action.type](action);
+			const action = userActionMappers[userAction.type](userAction);
 
-			const newGameState = game.reducer(state.gameState, gameAction);
+			const newGameState = game.reducer(state.gameState, action);
 
 			const [gameOver, winner] = game.hasWinner(newGameState);
 

@@ -163,7 +163,7 @@ class App extends React.Component<{ client: deepstreamIO.Client, clientData: any
 	onAction(action) {
 		const userId = this.props.clientData.username;
 
-		this.props.client.rpc.make('performAction', { userId, gameId: this.state.gameId, action }, (err, result) => {
+		this.props.client.rpc.make('performAction', { userId, gameId: this.state.gameId, userAction: action }, (err, result) => {
 			if(err) {
 				return alert(`Error occured when performing action: ${err}`);
 			}
