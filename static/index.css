@@ -11,10 +11,18 @@
     position: absolute;
 }
 
-.player-1 {
+.piece.player-1 {
     background-color: red;
 }
 
-.player-2 {
+.piece.player-2 {
     background-color: blue;
+}
+
+.player-1 {
+	color: red;
+}
+
+.player-2 {
+	color: blue;
 }
