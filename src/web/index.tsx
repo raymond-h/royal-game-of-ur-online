@@ -57,10 +57,13 @@ class DeepstreamClientWrapper
 	}
 }
 
-type GameState =
-	{ state: 'awaitingOpponent', players: [string, null], gameState: any, winner: null } |
-	{ state: 'playing', players: [string, string], gameState: any, winner: null } |
-	{ state: 'game-over', players: [string, string], gameState: any, winner: number };
+interface GameState {
+	gameId: string;
+	state: string;
+	players: [string, string | null];
+	gameState: any;
+	winner: number | null;
+}
 
 interface UserInfo {
 	name: string;
@@ -101,6 +104,7 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 
 		const gameObs = this.gameIdSubj.switchMap(gameId =>
 			fromDsRecord<GameState>(this.props.client, `game/${gameId}`, true)
+			.map(game => ({ ...game, gameId }))
 		);
 
 		const userInfoMapper = defaultName => userId => {
@@ -133,14 +137,16 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 			})
 		);
 
+		const gameIdObs = gameObs.map(game => game.gameId).distinctUntilChanged();
+
 		const notificationsObs = Rx.Observable.merge(
-			this.gameIdSubj
+			gameIdObs
 			.switchMap(gameId =>
 				fromDsEvent<{}>(client, `game/${gameId}/game-over`)
 				.mapTo({ title: 'Game over!!!!!' })
 			),
 
-			this.gameIdSubj
+			gameIdObs
 			.switchMap(gameId =>
 				fromDsEvent<{}>(client, `game/${gameId}/players-turn/${clientData.username}`)
 				.mapTo({ title: 'Your turn!!' })
