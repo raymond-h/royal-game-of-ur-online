@@ -85,7 +85,7 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 			userInfos: [null, null]
 		};
 
-		this.gameIdSubj = new Rx.Subject();
+		this.gameIdSubj = new Rx.BehaviorSubject(this.props.gameId);
 
 		this.subscriptions = [];
 	}
@@ -113,10 +113,12 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 		const userInfosObs = Rx.Observable.combineLatest(
 			gameObs
 			.map(game => (game == null) ? null : game.players[0])
+			.distinctUntilChanged()
 			.switchMap(userInfoMapper('Player #1')),
 
 			gameObs
 			.map(game => (game == null) ? null : game.players[1])
+			.distinctUntilChanged()
 			.switchMap(userInfoMapper('Player #2'))
 		);
 
@@ -147,11 +149,11 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 
 		this.subscriptions.push(
 			Rx.Observable.from(Notification.requestPermission())
-				.mergeMap(() => notificationsObs)
-				.subscribe(({ title }) => {
-					console.log('NEW NOTIFICATION:', title);
-					new Notification(title, {});
-				})
+			.mergeMap(result => notificationsObs)
+			.subscribe(({ title }) => {
+				console.log('NEW NOTIFICATION:', title);
+				new Notification(title, {});
+			})
 		);
 
 		this.gameIdSubj.next(this.props.gameId);
