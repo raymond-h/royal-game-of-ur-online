@@ -4,6 +4,7 @@ import proxy = require('http-proxy-middleware');
 import serveStatic = require('serve-static');
 import bodyParser = require('body-parser');
 import morgan = require('morgan');
+import MongoStore = require('connect-mongo')(session);
 
 import useExpressMiddleware = require('use-express-middleware');
 
@@ -44,7 +45,12 @@ const wsProxy = proxy({
 app.use('/deepstream', wsProxy);
 
 const authMiddlewares = [
-    session({ secret: process.env.SESSION_SECRET }),
+    session({
+        secret: process.env.SESSION_SECRET,
+        store: (process.env.NODE_ENV === 'development') ?
+            new session.MemoryStore() :
+            new MongoStore({ url: process.env.MONGO_URL })
+    }),
     passport.initialize(),
     passport.session()
 ];
