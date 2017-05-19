@@ -86,6 +86,8 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 		};
 
 		this.gameIdSubj = new Rx.Subject();
+
+		this.subscriptions = [];
 	}
 
 	componentWillReceiveProps(nextProps) {
