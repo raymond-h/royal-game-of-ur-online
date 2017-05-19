@@ -33,6 +33,7 @@
     "ramda": "^0.23.0",
     "react": "^15.5.4",
     "react-dom": "^15.5.4",
+    "react-router-dom": "^4.1.1",
     "rxjs": "^5.3.1",
     "serve-static": "^1.12.2",
     "tsify": "^3.0.1",

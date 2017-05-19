@@ -113,6 +113,12 @@ app.post('/deepstream-auth', (req, res) => {
     }
 });
 
+app.get('*', (req, res) => {
+    res.sendFile(
+        require('path').join(__dirname, '../../static/index.html')
+    );
+});
+
 const server = app.listen(process.env.PORT);
 
 server.on('upgrade', wsProxy.upgrade);

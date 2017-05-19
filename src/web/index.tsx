@@ -1,6 +1,7 @@
 import deepstream = require('deepstream.io-client-js');
 import React = require('react');
 import ReactDOM = require('react-dom');
+import { BrowserRouter as Router, Route, Link } from 'react-router-dom';
 import Rx = require('rxjs/Rx');
 import R = require('ramda');
 import whenDomReady = require('when-dom-ready');
@@ -60,65 +61,59 @@ interface UserInfo {
 
 interface AppState {
 	game: GameState | null;
-	gameId: string | null;
 	userInfos: [UserInfo | null, UserInfo | null];
-	name: string;
 }
 
-class App extends React.Component<{ client: deepstreamIO.Client, clientData: any }, AppState> {
-	subscription: Rx.Subscription;
-	stateObs: Rx.Observable<{ game: GameState | null, gameId: string | null }>;
+type GameScreenProps = { client: deepstreamIO.Client, clientData: any, gameId: string };
 
-	userInfoRecord: deepstreamIO.Record;
+class GameScreen extends React.Component<GameScreenProps, AppState> {
+	subscription: Rx.Subscription;
+	gameIdSubj: Rx.Subject<string>;
+	stateObs: Rx.Observable<{ game: GameState | null }>;
 
 	constructor(props) {
 		super(props);
 
 		this.state = {
 			game: null,
-			gameId: null,
-			userInfos: [null, null],
-			name: ''
+			userInfos: [null, null]
 		};
 
-		const { client, clientData } = this.props;
+		const { client, clientData, gameId } = this.props;
 
-		this.userInfoRecord = client.record.getRecord(`user/${clientData.username}`);
+		this.gameIdSubj = new Rx.Subject();
 
-		const gameIdObs = Rx.Observable.fromEvent(window, 'hashchange')
-			.map(() => location.hash)
-			.startWith(location.hash)
-			.map(hash => /#?(.+)/.exec(hash))
-			.map(hash => (hash != null) ? hash[1] : null)
-			.distinctUntilChanged();
+		const gameObs = this.gameIdSubj.switchMap(gameId =>
+			fromDsRecord<GameState>(this.props.client, `game/${gameId}`, true)
+		);
 
-		const gameObs = gameIdObs
-			.switchMap(hash => {
-				if(hash == null) { return Rx.Observable.of(null); }
+		const userInfoMapper = defaultName => userId => {
+			if(userId == null) { return Rx.Observable.of({ name: defaultName }); }
 
-				return fromDsRecord<GameState>(this.props.client, `game/${hash}`, true);
-			});
+			return fromDsRecord<UserInfo>(this.props.client, `user/${userId}`, true)
+				.map(data => ({ name: defaultName, ...data }));
+		};
 
 		const userInfosObs = Rx.Observable.combineLatest(
-			gameObs.switchMap(game => {
-				if(game == null) { return Rx.Observable.of(null); }
+			gameObs
+			.map(game => (game == null) ? null : game.players[0])
+			.switchMap(userInfoMapper('Player #1')),
 
-				return fromDsRecord<UserInfo>(this.props.client, `user/${game.players[0]}`, true)
-					.map(data => ({ name: 'Player #1', ...data }));
-			}),
-
-			gameObs.switchMap(game => {
-				if(game == null) { return Rx.Observable.of(null); }
-
-				return fromDsRecord<UserInfo>(this.props.client, `user/${game.players[1]}`, true)
-					.map(data => ({ name: 'Player #2', ...data }));
-			})
+			gameObs
+			.map(game => (game == null) ? null : game.players[1])
+			.switchMap(userInfoMapper('Player #2'))
 		);
 
 		this.stateObs = Rx.Observable.combineLatest(
-			gameIdObs, gameObs, userInfosObs,
-			(gameId, game, userInfos) => ({ gameId, game, userInfos })
+			gameObs, userInfosObs,
+			(game, userInfos) => ({ game, userInfos })
 		);
+	}
+
+	componentWillReceiveProps(nextProps) {
+		if(this.props.gameId !== nextProps.gameId) {
+			this.gameIdSubj.next(nextProps.gameId);
+		}
 	}
 
 	componentDidMount() {
@@ -127,13 +122,102 @@ class App extends React.Component<{ client: deepstreamIO.Client, clientData: any
 				this.setState(data);
 			});
 
-		this.userInfoRecord.subscribe('name', name => this.setState({ name }));
+		this.gameIdSubj.next(this.props.gameId);
 	}
 
 	componentWillUnmount() {
 		this.subscription.unsubscribe();
+	}
 
+	onAcceptGame() {
+		const userId = this.props.clientData.username;
+
+		this.props.client.rpc.make('acceptGame', { userId, gameId: this.props.gameId }, (err, result) => {
+			if(err) {
+				return alert(`Error occured when accepting game: ${err}`);
+			}
+		});
+	}
+
+	onAction(action) {
+		const userId = this.props.clientData.username;
+
+		this.props.client.rpc.make('performAction', { userId, gameId: this.props.gameId, userAction: action }, (err, result) => {
+			if(err) {
+				return alert(`Error occured when performing action: ${err}`);
+			}
+
+			console.log('action went ok brah');
+		});
+	}
+
+	render() {
+		const isLoggedIn = this.props.clientData.type === 'user';
+
+		const ownPlayer: number = (isLoggedIn && this.state.game != null) ?
+			(this.state.game.players as [string, string]).indexOf(this.props.clientData.username) :
+			-1;
+
+		const spectating = (isLoggedIn && this.state.game != null) ?
+			!R.contains(this.props.clientData.username, this.state.game.players) :
+			true;
+
+		const onAction = (isLoggedIn && !spectating) ?
+			this.onAction.bind(this) :
+			() => void 0;
+
+		return <div>
+			{
+				(
+					isLoggedIn &&
+					this.state.game != null &&
+					this.state.game.state === 'awaitingOpponent' &&
+					this.state.game.players[0] !== this.props.clientData.username
+				) ?
+				<button onClick={this.onAcceptGame.bind(this)}>Accept challenge</button> :
+				null
+			}
+
+			{this.state.game != null ?
+				<Game
+					ownPlayer={ownPlayer}
+					spectating={spectating}
+					onAction={onAction}
+
+					game={this.state.game.gameState}
+					userInfos={this.state.userInfos}
+					gameOver={this.state.game.state === 'game-over'}
+					winner={this.state.game.winner} /> :
+				null
+			}
+		</div>;
+	}
+}
+
+type MainScreenProps = {
+	client: deepstreamIO.Client, clientData: any,
+	isLoggedIn: boolean, history: any
+};
+
+class MainScreen extends React.Component<MainScreenProps, { name: string }> {
+	userInfoRecord: deepstreamIO.Record;
+
+	constructor(props) {
+		super(props);
+
+		this.state = { name: '' };
+	}
+
+	componentDidMount() {
+		const { client, clientData } = this.props;
+
+		this.userInfoRecord = client.record.getRecord(`user/${clientData.username}`);
+		this.userInfoRecord.subscribe('name', name => this.setState({ name }));
+	}
+
+	componentWillUnmount() {
 		this.userInfoRecord.unsubscribe('name' as any);
+		this.userInfoRecord.discard();
 	}
 
 	onNewGame() {
@@ -144,89 +228,50 @@ class App extends React.Component<{ client: deepstreamIO.Client, clientData: any
 				return alert(`Error occured when creating new game: ${err}`);
 			}
 
-			location.hash = `#${result.gameId}`;
-		});
-	}
-
-	onAcceptGame() {
-		const userId = this.props.clientData.username;
-
-		this.props.client.rpc.make('acceptGame', { userId, gameId: this.state.gameId }, (err, result) => {
-			if(err) {
-				return alert(`Error occured when accepting game: ${err}`);
-			}
-
-			location.hash = `#${result.gameId}`;
-		});
-	}
-
-	onAction(action) {
-		const userId = this.props.clientData.username;
-
-		this.props.client.rpc.make('performAction', { userId, gameId: this.state.gameId, userAction: action }, (err, result) => {
-			if(err) {
-				return alert(`Error occured when performing action: ${err}`);
-			}
-
-			console.log('action went ok brah');
+			this.props.history.push(`/game/${result.gameId}`);
 		});
 	}
 
 	render() {
-		if(this.props.clientData.type !== 'user') {
-			return <div>
-				<a href='/login'>Log in (or sign up)</a>
-				<p>
-					Hello guest!
-				</p>
-				{this.state.game != null ?
-					<Game
-						ownPlayer={-1}
-						game={this.state.game.gameState}
-						userInfos={this.state.userInfos}
-						gameOver={this.state.game.state === 'game-over'}
-						winner={this.state.game.winner}
-						spectating={true}
-						onAction={() => void 0} /> :
-					null
-				}
-			</div>;
-		}
-
-		const ownPlayer: number = this.state.game != null ?
-			(this.state.game.players as [string, string]).indexOf(this.props.clientData.username) :
-			-1;
+		const { isLoggedIn } = this.props;
 
 		return <div>
-			<a href='/logout'>Log out</a>
-			<p>
-				Hello <input
-					value={this.state.name}
-					onChange={ev => this.userInfoRecord.set('name', ev.target.value)} />!
-			</p>
-			<button onClick={this.onNewGame.bind(this)}>New game</button>
-
 			{
-				(
-					this.state.game != null &&
-					this.state.game.state === 'awaitingOpponent' &&
-					this.state.game.players[0] !== this.props.clientData.username
-				) ?
-				<button onClick={this.onAcceptGame.bind(this)}>Accept challenge</button> :
-				null
-			}
-			{this.state.game != null ?
-				<Game
-					ownPlayer={ownPlayer}
-					game={this.state.game.gameState}
-					userInfos={this.state.userInfos}
-					gameOver={this.state.game.state === 'game-over'}
-					winner={this.state.game.winner}
-					spectating={!R.contains(this.props.clientData.username, this.state.game.players)}
-					onAction={this.onAction.bind(this)} /> :
-				null
+				(!isLoggedIn) ? <div>
+					<a href='/login'>Log in (or sign up)</a>
+					<p>
+						Hello guest!
+					</p>
+				</div> : <div>
+					<a href='/logout'>Log out</a>
+					<p>
+						Hello <input
+							value={this.state.name}
+							onChange={ev => this.userInfoRecord.set('name', ev.target.value)} />!
+					</p>
+					<button onClick={this.onNewGame.bind(this)}>New game</button>
+				</div>
 			}
 		</div>;
+	}
+}
+
+class App extends React.Component<{ client: deepstreamIO.Client, clientData: any }, null> {
+	render() {
+		const isLoggedIn = (this.props.clientData.type === 'user');
+
+		return <Router><div>
+			<Route path='/' render={({ history }) =>
+				<MainScreen {...this.props} isLoggedIn={isLoggedIn} history={history} />
+			} />
+
+			<Route path='/game/:gameId' render={({ match }) =>
+				<div>
+					<p>THIS IS GAME WITH ID {match.params.gameId}</p>
+					<GameScreen {...this.props} {...match.params} />
+				</div>
+			} />
+		</div></Router>;
 	}
 }
 
