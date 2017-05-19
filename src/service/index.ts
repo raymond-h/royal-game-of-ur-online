@@ -73,7 +73,7 @@ client.rpc.provide('performAction', ({ userId, gameId, userAction }, res) => {
 			assert.strictEqual(state.state, 'playing',
 				'This game is either not ready to be played yet, or already finished');
 
-			assert.notStrictEqual(state.players[state.gameState.currentPlayer], userId,
+			assert.strictEqual(state.players[state.gameState.currentPlayer], userId,
 				`It is not that player's turn`);
 
 			const action = userActionMappers[userAction.type](userAction);
