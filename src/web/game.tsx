@@ -53,8 +53,8 @@ function PlayerInfo({ playerIndex, playerState, userInfo }) {
 	return <div className={`player-info player-${playerIndex+1}`}>
 		<p>Player #{ playerIndex+1 } ({ userInfo.name })</p>
 		<ul>
-			<li>{wonPieces} won {wonPieces == 1 ? 'pieces' : 'piece'}</li>
-			<li>{outOfPlayPieces} addable {outOfPlayPieces == 1 ? 'pieces' : 'piece'}</li>
+			<li>{wonPieces} won {wonPieces == 1 ? 'piece' : 'pieces'}</li>
+			<li>{outOfPlayPieces} addable {outOfPlayPieces == 1 ? 'piece' : 'pieces'}</li>
 		</ul>
 	</div>;
 }
