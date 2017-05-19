@@ -4,12 +4,14 @@ import proxy = require('http-proxy-middleware');
 import serveStatic = require('serve-static');
 import bodyParser = require('body-parser');
 import morgan = require('morgan');
-import MongoStore = require('connect-mongo')(session);
+import connectMongo = require('connect-mongo');
 
 import useExpressMiddleware = require('use-express-middleware');
 
 import passport = require('passport');
 import Auth0Strategy = require('passport-auth0');
+
+const MongoStore = connectMongo(session);
 
 // Setup Passport + Auth0
 const strategy = new Auth0Strategy({
