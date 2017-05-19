@@ -137,16 +137,19 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 			})
 		);
 
-		const gameIdObs = gameObs.map(game => game.gameId).distinctUntilChanged();
-
 		const notificationsObs = Rx.Observable.merge(
-			gameIdObs
+			gameObs
+			.map(game => game.gameId)
+			.distinctUntilChanged()
 			.switchMap(gameId =>
 				fromDsEvent<{}>(client, `game/${gameId}/game-over`)
 				.mapTo({ title: 'Game over!!!!!' })
 			),
 
-			gameIdObs
+			gameObs
+			.filter(game => R.contains(clientData.username, game.players))
+			.map(game => game.gameId)
+			.distinctUntilChanged()
 			.switchMap(gameId =>
 				fromDsEvent<{}>(client, `game/${gameId}/players-turn/${clientData.username}`)
 				.mapTo({ title: 'Your turn!!' })
