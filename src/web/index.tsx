@@ -266,10 +266,7 @@ class App extends React.Component<{ client: deepstreamIO.Client, clientData: any
 			} />
 
 			<Route path='/game/:gameId' render={({ match }) =>
-				<div>
-					<p>THIS IS GAME WITH ID {match.params.gameId}</p>
-					<GameScreen {...this.props} {...match.params} />
-				</div>
+				<GameScreen {...this.props} {...match.params} />
 			} />
 		</div></Router>;
 	}
