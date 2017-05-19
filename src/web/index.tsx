@@ -26,6 +26,13 @@ function fromDsRecord<T>(
 	);
 }
 
+function fromDsEvent<T>(client: deepstreamIO.Client, eventName: string): Rx.Observable<T> {
+	return Rx.Observable.fromEventPattern(
+		handler => client.event.subscribe(eventName, handler as (any) => void),
+		handler => client.event.unsubscribe(eventName, handler as (any) => void)
+	);
+}
+
 type ChildFn = (client: deepstreamIO.Client, clientData: any) => JSX.Element;
 
 class DeepstreamClientWrapper
@@ -67,9 +74,8 @@ interface AppState {
 type GameScreenProps = { client: deepstreamIO.Client, clientData: any, gameId: string };
 
 class GameScreen extends React.Component<GameScreenProps, AppState> {
-	subscription: Rx.Subscription;
+	subscriptions: Rx.Subscription[];
 	gameIdSubj: Rx.Subject<string>;
-	stateObs: Rx.Observable<{ game: GameState | null }>;
 
 	constructor(props) {
 		super(props);
@@ -79,9 +85,17 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 			userInfos: [null, null]
 		};
 
-		const { client, clientData, gameId } = this.props;
-
 		this.gameIdSubj = new Rx.Subject();
+	}
+
+	componentWillReceiveProps(nextProps) {
+		if(this.props.gameId !== nextProps.gameId) {
+			this.gameIdSubj.next(nextProps.gameId);
+		}
+	}
+
+	componentDidMount() {
+		const { client, clientData, gameId } = this.props;
 
 		const gameObs = this.gameIdSubj.switchMap(gameId =>
 			fromDsRecord<GameState>(this.props.client, `game/${gameId}`, true)
@@ -104,29 +118,47 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 			.switchMap(userInfoMapper('Player #2'))
 		);
 
-		this.stateObs = Rx.Observable.combineLatest(
+		const stateObs = Rx.Observable.combineLatest(
 			gameObs, userInfosObs,
 			(game, userInfos) => ({ game, userInfos })
 		);
-	}
 
-	componentWillReceiveProps(nextProps) {
-		if(this.props.gameId !== nextProps.gameId) {
-			this.gameIdSubj.next(nextProps.gameId);
-		}
-	}
-
-	componentDidMount() {
-		this.subscription =
-			this.stateObs.subscribe(data => {
+		this.subscriptions.push(
+			stateObs.subscribe(data => {
 				this.setState(data);
-			});
+			})
+		);
+
+		const notificationsObs = Rx.Observable.merge(
+			this.gameIdSubj
+			.switchMap(gameId =>
+				fromDsEvent<{}>(client, `game/${gameId}/game-over`)
+				.mapTo({ title: 'Game over!!!!!' })
+			),
+
+			this.gameIdSubj
+			.switchMap(gameId =>
+				fromDsEvent<{}>(client, `game/${gameId}/players-turn/${clientData.username}`)
+				.mapTo({ title: 'Your turn!!' })
+			)
+		);
+
+		this.subscriptions.push(
+			Rx.Observable.from(Notification.requestPermission())
+				.mergeMap(() => notificationsObs)
+				.subscribe(({ title }) => {
+					new Notification(title, {});
+				})
+		);
 
 		this.gameIdSubj.next(this.props.gameId);
 	}
 
 	componentWillUnmount() {
-		this.subscription.unsubscribe();
+		for(const subscription of this.subscriptions) {
+			subscription.unsubscribe();
+		}
+		this.subscriptions = [];
 	}
 
 	onAcceptGame() {

@@ -82,6 +82,13 @@ client.rpc.provide('performAction', ({ userId, gameId, userAction }, res) => {
 
 			const [gameOver, winner] = game.hasWinner(newGameState);
 
+			if(gameOver) {
+				client.event.emit(`game/${gameId}/game-over`, {});
+			}
+			else if(newGameState.currentPlayer !== state.gameState) {
+				client.event.emit(`game/${gameId}/players-turn/${userId}`, {});
+			}
+
 			stateRecord.set('gameState', newGameState);
 			stateRecord.set('winner', winner);
 			if(gameOver) {
