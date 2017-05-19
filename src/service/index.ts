@@ -31,12 +31,29 @@ client.rpc.provide('newGame', ({ userId }, res) => {
 client.rpc.provide('acceptGame', ({ userId, gameId }, res) => {
 	const stateRecord = client.record.getRecord(`game/${gameId}`);
 
-	stateRecord.set('players[1]', userId);
-	stateRecord.set('state', 'playing');
+	stateRecord.whenReady(() => {
+		try {
+			stateRecord.set('players[1]', userId);
+			stateRecord.set('state', 'playing');
 
-	stateRecord.discard();
+			stateRecord.discard();
 
-	res.send({ gameId });
+			const state = stateRecord.get();
+
+			res.send({ gameId });
+
+			const currentUserId = state.players[state.currentPlayer];
+
+			client.event.emit(`game/${gameId}/players-turn/${currentUserId}`, {});
+		}
+		catch(e) {
+			console.error(e.stack);
+			res.error(e.message);
+		}
+		finally {
+			stateRecord.discard();
+		}
+	});
 });
 
 function diceRoll() {
