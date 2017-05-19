@@ -149,6 +149,7 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 			Rx.Observable.from(Notification.requestPermission())
 				.mergeMap(() => notificationsObs)
 				.subscribe(({ title }) => {
+					console.log('NEW NOTIFICATION:', title);
 					new Notification(title, {});
 				})
 		);

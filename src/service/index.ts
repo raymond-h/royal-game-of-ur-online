@@ -85,7 +85,7 @@ client.rpc.provide('performAction', ({ userId, gameId, userAction }, res) => {
 			if(gameOver) {
 				client.event.emit(`game/${gameId}/game-over`, {});
 			}
-			else if(newGameState.currentPlayer !== state.gameState) {
+			else if(newGameState.currentPlayer !== state.gameState.currentPlayer) {
 				client.event.emit(`game/${gameId}/players-turn/${userId}`, {});
 			}
 
