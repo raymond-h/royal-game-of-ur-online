@@ -1,16 +1,20 @@
 import assert = require('assert');
 import R = require('ramda');
 
-interface State {
+export interface State {
     players: [PlayerState, PlayerState];
     currentPlayer: number;
     lastRoll: number | null;
 }
 
-interface PlayerState {
+export interface PlayerState {
     wonPieces: number;
     outOfPlayPieces: number;
-    fieldedPieces: { position: number }[];
+    fieldedPieces: Piece[];
+}
+
+export interface Piece {
+    position: number;
 }
 
 export const initialState: State = {
@@ -22,22 +26,43 @@ export const initialState: State = {
     lastRoll: null
 };
 
-function isDangerZone(position: number): boolean {
+export function opponentPlayer(state: State, player: number) {
+    return (player+1) % (state.players.length);
+}
+
+export function isDangerZone(position: number): boolean {
     return 4 <= position && position <= 11;
 }
 
-function isSafeSpot(position: number): boolean {
+export function isSafeSpot(position: number): boolean {
     return position == 7;
 }
 
-function isRerollSpot(position: number): boolean {
+export function isRerollSpot(position: number): boolean {
     return position == 3 || position == 7 || position == 13;
 }
 
-function hasPieceAt(state: State, player: number, position: number): boolean {
+export function hasPieceAt(state: State, player: number, position: number): boolean {
     const pieces = state.players[player].fieldedPieces;
 
     return R.any(R.propEq('position', position), pieces);
+}
+
+function canMoveTo(state: State, player: number, position: number): boolean {
+    if(state.lastRoll == null || state.lastRoll == 0) return false;
+
+    if(position > 14) {
+        return false;
+    }
+    else if(hasPieceAt(state, player, position)) {
+        return false;
+    }
+    else if(
+        isSafeSpot(position) && hasPieceAt(state, opponentPlayer(state, player), position)
+    ) {
+        return false;
+    }
+    else return true;
 }
 
 function passToNextPlayer(state: State): State {
@@ -52,6 +77,32 @@ export function hasWinner(state: State): [boolean, number | null] {
     }
 
     return [false, null];
+}
+
+export function potentialMoves(state: State): { type: string, index?: number, to?: number }[] {
+    if(state.lastRoll == null) {
+        return [{ type: 'roll' }];
+    }
+
+    const lastRoll = state.lastRoll;
+
+    const currentPlayer = state.players[state.currentPlayer];
+
+    const potentialMovablePieces =
+        currentPlayer.fieldedPieces
+        .filter(
+            piece => canMoveTo(state, state.currentPlayer, piece.position + lastRoll)
+        );
+
+    const moves = potentialMovablePieces
+        .map((piece, index) => ({ type: 'movePiece', index, to: piece.position + lastRoll }));
+
+    const canAddPiece = !hasPieceAt(state, state.currentPlayer, lastRoll);
+
+    return R.pipe(
+        R.when(() => canAddPiece, R.append({ type: 'addPiece' })),
+        R.when(R.isEmpty, R.append({ type: 'pass' }))
+    )(moves);
 }
 
 export const actionHandlers = {
@@ -146,4 +197,32 @@ export const actionHandlers = {
 
 export function reducer(state: State, action): State {
     return actionHandlers[action.type](state, action);
+}
+
+function diceRoll() {
+    const coinFlip = () => (Math.random() < 0.5) ? 1 : 0;
+
+    return coinFlip() + coinFlip() + coinFlip() + coinFlip();
+}
+
+export function moveToAction(move) {
+    const moveActionMappers = {
+        roll(data) {
+            return { type: 'setDiceRolls', roll: diceRoll() };
+        },
+
+        addPiece(data) {
+            return { type: 'addPiece' };
+        },
+
+        movePiece(data) {
+            return { type: 'movePiece', index: data.index };
+        },
+
+        pass(data) {
+            return { type: 'pass' };
+        }
+    };
+
+    return moveActionMappers[move.type](move);
 }
