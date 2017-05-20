@@ -110,6 +110,8 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 		const userInfoMapper = defaultName => userId => {
 			if(userId == null) { return Rx.Observable.of({ name: defaultName }); }
 
+			if(userId == 'bot') { return Rx.Observable.of({ name: 'Cool Bot' }); }
+
 			return fromDsRecord<UserInfo>(this.props.client, `user/${userId}`, true)
 				.map(data => ({ name: defaultName, ...data }));
 		};
@@ -185,6 +187,14 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 		});
 	}
 
+	onPlayAgainstBot() {
+		this.props.client.rpc.make('playAgainstBot', { gameId: this.props.gameId }, (err, result) => {
+			if(err) {
+				return alert(`Error occured when trying to play against bot: ${err}`);
+			}
+		});
+	}
+
 	onAction(action) {
 		const userId = this.props.clientData.username;
 
@@ -221,6 +231,16 @@ class GameScreen extends React.Component<GameScreenProps, AppState> {
 					this.state.game.players[0] !== this.props.clientData.username
 				) ?
 				<button onClick={this.onAcceptGame.bind(this)}>Accept challenge</button> :
+				null
+			}
+			{
+				(
+					isLoggedIn &&
+					this.state.game != null &&
+					this.state.game.state === 'awaitingOpponent' &&
+					this.state.game.players[0] === this.props.clientData.username
+				) ?
+				<button onClick={this.onPlayAgainstBot.bind(this)}>Play against bot</button> :
 				null
 			}
 

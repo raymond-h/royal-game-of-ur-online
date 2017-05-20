@@ -1,5 +1,6 @@
 import assert = require('assert');
 import deepstream = require('deepstream.io-client-js');
+import Rx = require('rxjs/Rx');
 import game = require('../game');
 
 let clientData;
@@ -56,29 +57,20 @@ client.rpc.provide('acceptGame', ({ userId, gameId }, res) => {
 	});
 });
 
-function diceRoll() {
-	const coinFlip = () => (Math.random() < 0.5) ? 1 : 0;
+const botGamesRecord = client.record.getList('bot/games-queue');
 
-	return coinFlip() + coinFlip() + coinFlip() + coinFlip();
-}
+client.rpc.provide('playAgainstBot', ({ gameId }, res) => {
+	const stateRecord = client.record.getRecord(`game/${gameId}`);
 
-const userActionMappers = {
-	roll(data) {
-		return { type: 'setDiceRolls', roll: diceRoll() };
-	},
+	stateRecord.set('players[1]', 'bot');
+	stateRecord.set('state', 'playing');
 
-	addPiece(data) {
-		return data;
-	},
+	stateRecord.discard();
 
-	movePiece(data) {
-		return data;
-	},
+	botGamesRecord.addEntry(gameId);
 
-	pass(data) {
-		return data;
-	}
-};
+	res.send({ gameId });
+});
 
 client.rpc.provide('performAction', ({ userId, gameId, userAction }, res) => {
 	const stateRecord = client.record.getRecord(`game/${gameId}`);
@@ -93,11 +85,18 @@ client.rpc.provide('performAction', ({ userId, gameId, userAction }, res) => {
 			assert.strictEqual(state.players[state.gameState.currentPlayer], userId,
 				`It is not that player's turn`);
 
-			const action = userActionMappers[userAction.type](userAction);
+			const action = game.moveToAction(userAction);
 
 			const newGameState = game.reducer(state.gameState, action);
 
 			const [gameOver, winner] = game.hasWinner(newGameState);
+
+			stateRecord.set('gameState', newGameState);
+			stateRecord.set('winner', winner);
+			if(gameOver) {
+				stateRecord.set('state', 'game-over');
+			}
+			res.send('ok');
 
 			if(gameOver) {
 				client.event.emit(`game/${gameId}/game-over`, {});
@@ -107,16 +106,9 @@ client.rpc.provide('performAction', ({ userId, gameId, userAction }, res) => {
 
 				client.event.emit(`game/${gameId}/players-turn/${currentUserId}`, {});
 			}
-
-			stateRecord.set('gameState', newGameState);
-			stateRecord.set('winner', winner);
-			if(gameOver) {
-				stateRecord.set('state', 'game-over');
-			}
-			res.send('ok');
 		}
 		catch(e) {
-			console.error(e.stack);
+			// console.error(e.stack);
 			res.error(e.message);
 		}
 		finally {
