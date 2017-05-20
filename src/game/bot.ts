@@ -28,9 +28,7 @@ export function dangerLevelAt(state: game.State, position: number) {
 export function nextMove(state: game.State) {
 	const potentialMoves = game.potentialMoves(state);
 
-	console.log(potentialMoves);
-
-	if(potentialMoves.length == 1 && (potentialMoves[0].type == 'pass' || potentialMoves[0].type == 'roll')) {
+	if(potentialMoves.length == 1) {
 		return potentialMoves[0];
 	}
 
@@ -75,10 +73,10 @@ export function nextMove(state: game.State) {
 	}
 
 	// 5: move to regular
-	const bestRegularMove = potentialMoves
+	return potentialMoves
 		.filter(move => move.type === 'movePiece')
 		.reduce(
-			R.maxBy<{ type: string, index: number, to: number }>(move =>
+			R.minBy<{ type: string, index: number, to: number }>(move =>
 				dangerLevelAt(state, move.to)
 			)
 		);

@@ -90,14 +90,18 @@ export function potentialMoves(state: State): { type: string, index?: number, to
 
     const potentialMovablePieces =
         currentPlayer.fieldedPieces
+        .map<[Piece, number]>((piece, index) => [piece, index])
         .filter(
-            piece => canMoveTo(state, state.currentPlayer, piece.position + lastRoll)
+            ([piece, index]) => canMoveTo(state, state.currentPlayer, piece.position + lastRoll)
         );
 
     const moves = potentialMovablePieces
-        .map((piece, index) => ({ type: 'movePiece', index, to: piece.position + lastRoll }));
+        .map(([piece, index]) => ({ type: 'movePiece', index, to: piece.position + lastRoll }));
 
-    const canAddPiece = !hasPieceAt(state, state.currentPlayer, lastRoll);
+    const canAddPiece =
+        currentPlayer.outOfPlayPieces > 0 &&
+        (lastRoll != 0) &&
+        !hasPieceAt(state, state.currentPlayer, lastRoll-1);
 
     return R.pipe(
         R.when(() => canAddPiece, R.append({ type: 'addPiece' })),
