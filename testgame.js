@@ -1,5 +1,6 @@
 const R = require('ramda');
 const game = require('./lib/game');
+const bot = require('./lib/game/bot');
 
 const boardBase = `
 +-+-+-+-+   +-+-+
@@ -68,6 +69,14 @@ function toAction(argv, state) {
 	else if(argv[0] === 'pass') {
 		return { type: 'pass' };
 	}
+	else if(argv[0] === 'do-bot') {
+		const move = bot.nextMove(state);
+
+		// console.log('Potential moves!', game.potentialMoves(state));
+		console.log('My next move!', move);
+
+		return game.moveToAction(move);
+	}
 }
 
 const fs = require('fs');
@@ -79,15 +88,36 @@ else if(process.argv[2] === 'print') {
 	const state = JSON.parse(fs.readFileSync('state.json'));
 
 	console.log(render(state));
+	console.log('Winner:', game.hasWinner(state));
+}
+else if(process.argv[2] === 'moves') {
+	const state = JSON.parse(fs.readFileSync('state.json'));
+
+	console.log(game.potentialMoves(state));
+	console.log(render(state));
+}
+else if(process.argv[2] === 'bot') {
+	const state = JSON.parse(fs.readFileSync('state.json'));
+
+	console.log('Potential moves:', game.potentialMoves(state));
+	console.log('Bot next move:', bot.nextMove(state));
+	console.log(render(state));
 }
 else {
 	const state = JSON.parse(fs.readFileSync('state.json'));
 
-	const action = toAction(process.argv.slice(2), state);
+	const [gameOver, winner] = game.hasWinner(state);
+	if(gameOver) {
+		console.log(render(state));
+		console.log(`GAME OVER!!! WINNER IS PLAYER #${winner+1}!!`);
+	}
+	else {
+		const action = toAction(process.argv.slice(2), state);
 
-	const newState = game.reducer(state, action);
+		const newState = game.reducer(state, action);
 
-	console.log(render(newState));
+		console.log(render(newState));
 
-	fs.writeFileSync('state.json', JSON.stringify(newState, null, '\t'));
+		fs.writeFileSync('state.json', JSON.stringify(newState, null, '\t'));
+	}
 }
