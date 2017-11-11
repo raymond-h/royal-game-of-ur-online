@@ -45,5 +45,9 @@
     "use-express-middleware": "1.0.0",
     "watchify": "3.9.0",
     "when-dom-ready": "1.2.11"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/raymond-h/royal-game-of-ur-online"
   }
 }
