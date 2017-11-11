@@ -1,4 +1,6 @@
 {
+  "name": "royal-game-of-ur-online",
+  "description": "Online multiplayer version of Royal Game of Ur, made with Deepstream",
   "scripts": {
     "http-server": "node lib/backend",
     "service": "node lib/service",
